@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Simulator Gerak Parabola + Hambatan Udara</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #111827;
+            color: #e5e7eb;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        h1 {
+            margin-top: 20px;
+            font-size: 1.4rem;
+            text-align: center;
+        }
+
+        .container {
+            margin-top: 16px;
+            background: #1f2937;
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            max-width: 980px;
+            width: 95%;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            font-size: 0.8rem;
+        }
+
+        .control-group input[type="number"] {
+            padding: 4px 6px;
+            border-radius: 6px;
+            border: 1px solid #4b5563;
+            background: #111827;
+            color: #e5e7eb;
+            width: 90px;
+        }
+
+        .control-group label {
+            margin-bottom: 2px;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 4px;
+            align-items: center;
+        }
+
+        button {
+            border: none;
+            border-radius: 999px;
+            padding: 6px 14px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 600;
+            background: #2563eb;
+            color: white;
+        }
+
+        button.secondary {
+            background: #374151;
+        }
+
+        button.danger {
+            background: #b91c1c;
+        }
+
+        button:disabled {
+            opacity: 0.4;
+            cursor: default;
+        }
+
+        canvas {
+            background: #020617;
+            border-radius: 10px;
+            border: 1px solid #4b5563;
+            display: block;
+            margin-top: 10px;
+        }
+
+        .info {
+            margin-top: 8px;
+            font-size: 0.8rem;
+            color: #d1d5db;
+        }
+
+        .info span {
+            display: inline-block;
+            margin-right: 12px;
+        }
+
+        @media (max-width: 600px) {
+            .control-group input[type="number"] {
+                width: 70px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Simulator Gerak Parabola 🏀 (+ Hambatan Udara)</h1>
+
+    <div class="container">
+        <div class="controls">
+            <div class="control-group">
+                <label>Kecepatan awal (m/s)</label>
+                <input type="number" id="speedInput" value="10" min="1" max="200">
+            </div>
+            <div class="control-group">
+                <label>Sudut (derajat)</label>
+                <input type="number" id="angleInput" value="30" min="0" max="89">
+            </div>
+            <div class="control-group">
+                <label>Gravitasi (m/s²)</label>
+                <input type="number" id="gravityInput" value="10" step="0.1" min="0.1" max="30">
+            </div>
+            <div class="control-group">
+                <label>Tinggi awal (m)</label>
+                <input type="number" id="heightInput" value="0" step="0.1" min="0">
+            </div>
+            <div class="control-group" style="display:none;">
+                <label>Skala jarak (px/m)</label>
+                <input type="number" id="scaleInput" value="7" step="1" min="1" max="30">
+            </div>
+
+            <!-- Massa -->
+            <div class="control-group">
+                <label>Massa (kg)</label>
+                <input type="number" id="massInput" value="1" step="0.1" min="0.1">
+            </div>
+
+            <!-- Koefisien drag -->
+            <div class="control-group">
+                <label>Koefisien drag (k)</label>
+                <input type="number" id="dragInput" value="0.15" step="0.01" min="0">
+            </div>
+
+            <!-- Checkbox hambatan udara -->
+            <div class="control-group">
+                <label>Hambatan udara</label>
+                <div class="buttons">
+                    <label style="font-size:0.8rem; display:flex; align-items:center; gap:4px;">
+                        <input type="checkbox" id="airCheckbox">
+                        Aktifkan
+                    </label>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>&nbsp;</label>
+                <div class="buttons">
+                    <button id="startBtn">Start ▶</button>
+                    <button id="pauseBtn" class="secondary" disabled>Pause ⏸</button>
+                    <button id="resetBtn" class="danger">Reset ⟲</button>
+                </div>
+            </div>
+        </div>
+
+        <canvas id="simCanvas" width="800" height="400"></canvas>
+
+        <div class="info" id="infoText">
+            Masukkan parameter, lalu klik <b>Start</b> buat lihat lintasan proyektil.
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const speedInput = document.getElementById('speedInput');
+        const angleInput = document.getElementById('angleInput');
+        const gravityInput = document.getElementById('gravityInput');
+        const heightInput = document.getElementById('heightInput');
+        const scaleInput = document.getElementById('scaleInput');
+        const massInput = document.getElementById('massInput');
+        const dragInput = document.getElementById('dragInput');
+        const airCheckbox = document.getElementById('airCheckbox');
+
+        const startBtn = document.getElementById('startBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const infoText = document.getElementById('infoText');
+
+        let animationId = null;
+        let running = false;
+        let paused = false;
+
+        // variabel fisika
+        let x, y, vx, vy, g, scale, t;
+        const dt = 0.02; // langkah waktu (s)
+        let pathPoints = [];
+        let maxHeight = 0;  // 🔥 tinggi maksimum dari simulasi
+
+        function resetSim() {
+            cancelAnimationFrame(animationId);
+            animationId = null;
+            running = false;
+            paused = false;
+
+            x = 0;
+            y = Number(heightInput.value) || 0;
+            t = 0;
+            pathPoints = [];
+            maxHeight = y;   // reset tinggi maksimum ke tinggi awal
+
+            drawScene();
+
+            startBtn.disabled = false;
+            pauseBtn.disabled = true;
+            pauseBtn.textContent = 'Pause ⏸';
+
+            infoText.innerHTML = 'Masukkan parameter, lalu klik <b>Start</b> buat lihat lintasan proyektil.';
+        }
+
+        function initPhysics() {
+            const v0 = Number(speedInput.value) || 0;
+            const angleDeg = Number(angleInput.value) || 0;
+            const h0 = Number(heightInput.value) || 0;
+            g = Number(gravityInput.value) || 9.8;
+            scale = Number(scaleInput.value) || 7;
+
+            const angleRad = angleDeg * Math.PI / 180;
+            vx = v0 * Math.cos(angleRad);
+            vy = v0 * Math.sin(angleRad);
+            x = 0;
+            y = h0;
+            t = 0;
+            pathPoints = [];
+            maxHeight = y;
+
+            const airOn = airCheckbox.checked;
+
+            if (!airOn) {
+                // 🔢 Perhitungan teori (tanpa drag)
+                const a = -0.5 * g;
+                const b = vy;
+                const c = h0;
+                let flightTime = 0;
+                const D = b * b - 4 * a * c;
+                if (D >= 0) {
+                    const t1 = (-b + Math.sqrt(D)) / (2 * a);
+                    const t2 = (-b - Math.sqrt(D)) / (2 * a);
+                    flightTime = Math.max(t1, t2);
+                }
+                const range = vx * flightTime;
+                const hMax = h0 + (vy * vy) / (2 * g);
+
+                infoText.innerHTML =
+                    `<span>Perkiraan (tanpa drag) — waktu di udara: <b>${flightTime.toFixed(2)} s</b></span>` +
+                    `<span>Jarak jangkauan: <b>${range.toFixed(2)} m</b></span>` +
+                    `<span>Tinggi maksimum: <b>${hMax.toFixed(2)} m</b></span>`;
+            } else {
+                // 🌬️ Drag aktif: teori nggak dipakai
+                infoText.innerHTML =
+                    `<span>Hambatan udara aktif.</span> <span>Hasil numerik akan muncul setelah proyektil jatuh.</span>`;
+            }
+        }
+
+        function worldToScreen(xWorld, yWorld) {
+            const xScreen = 40 + xWorld * scale;
+            const yScreen = canvas.height - 30 - yWorld * scale;
+            return { x: xScreen, y: yScreen };
+        }
+
+        function drawGround() {
+            ctx.strokeStyle = '#4b5563';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            const yGround = canvas.height - 30;
+            ctx.moveTo(0, yGround);
+            ctx.lineTo(canvas.width, yGround);
+            ctx.stroke();
+
+            ctx.fillStyle = '#111827';
+            ctx.fillRect(0, yGround, canvas.width, canvas.height - yGround);
+        }
+
+        function drawAxes() {
+            ctx.strokeStyle = '#374151';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(40, 10);
+            ctx.lineTo(40, canvas.height - 30);
+            ctx.moveTo(40, canvas.height - 30);
+            ctx.lineTo(canvas.width - 10, canvas.height - 30);
+            ctx.stroke();
+        }
+
+        function drawPath() {
+            if (pathPoints.length < 2) return;
+            ctx.strokeStyle = '#22c55e';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            for (let i = 0; i < pathPoints.length; i++) {
+                const p = worldToScreen(pathPoints[i].x, pathPoints[i].y);
+                if (i === 0) ctx.moveTo(p.x, p.y);
+                else ctx.lineTo(p.x, p.y);
+            }
+            ctx.stroke();
+        }
+
+        function drawProjectile() {
+            const p = worldToScreen(x, y);
+            ctx.fillStyle = '#f97316';
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 6, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function drawScene() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawGround();
+            drawAxes();
+            drawPath();
+            drawProjectile();
+        }
+
+        // ✨ update fisika (dengan opsi drag)
+        function updatePhysics() {
+            t += dt;
+
+            const mass = Number(massInput.value) || 1;   // kg
+            const dragCoeff = Number(dragInput.value) || 0;
+            const airOn = airCheckbox.checked;
+
+            let ax = 0;
+            let ay = -g;  // gravitasi ke bawah
+
+            if (airOn) {
+                const speed = Math.sqrt(vx * vx + vy * vy);
+                if (speed > 0 && mass > 0 && dragCoeff > 0) {
+                    const dragForce = dragCoeff * speed * speed;
+                    const dragAx = -(dragForce * vx / speed) / mass;
+                    const dragAy = -(dragForce * vy / speed) / mass;
+
+                    ax += dragAx;
+                    ay += dragAy;
+                }
+            }
+
+            vx = vx + ax * dt;
+            vy = vy + ay * dt;
+
+            x = x + vx * dt;
+            y = y + vy * dt;
+
+            if (y < 0) {
+                y = 0;
+            }
+
+            // 🔥 catat tinggi maksimum saat simulasi
+            if (y > maxHeight) {
+                maxHeight = y;
+            }
+
+            pathPoints.push({ x, y });
+        }
+
+        function loop() {
+            if (!running || paused) return;
+
+            updatePhysics();
+            drawScene();
+
+            // kondisi menyentuh tanah
+            if (y <= 0 && vy <= 0 && t > 0.05) {
+                running = false;
+                startBtn.disabled = false;
+                pauseBtn.disabled = true;
+
+                // 🔥 Tambahkan hasil simulasi (baik drag ON maupun OFF)
+                infoText.innerHTML =
+                    ` &nbsp;| &nbsp;<b>Hasil simulasi — waktu di udara: ${t.toFixed(2)} s</b>` +
+                    ` &nbsp;| &nbsp;<b>Jarak jangkauan: ${x.toFixed(2)} m</b>` +
+                    ` &nbsp;| &nbsp;<b>Tinggi maksimum: ${maxHeight.toFixed(2)} m</b>`;
+
+                return;
+            }
+
+            animationId = requestAnimationFrame(loop);
+        }
+
+        startBtn.addEventListener('click', () => {
+            if (!running) {
+                initPhysics();
+                running = true;
+                paused = false;
+                startBtn.disabled = true;
+                pauseBtn.disabled = false;
+                pauseBtn.textContent = 'Pause ⏸';
+                loop();
+            } else if (running && paused) {
+                paused = false;
+                pauseBtn.textContent = 'Pause ⏸';
+                loop();
+            }
+        });
+
+        pauseBtn.addEventListener('click', () => {
+            if (!running) return;
+            paused = !paused;
+            if (paused) {
+                pauseBtn.textContent = 'Resume ▶';
+            } else {
+                pauseBtn.textContent = 'Pause ⏸';
+                loop();
+            }
+        });
+
+        resetBtn.addEventListener('click', () => {
+            resetSim();
+        });
+
+        resetSim();
+    </script>
+</body>
+</html>
