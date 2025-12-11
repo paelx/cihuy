@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <title>Simulator Gerak Parabola + Hambatan Udara</title>
     <style>
-        body {
+        body 
+        {
             font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             margin: 0;
             padding: 0;
@@ -16,13 +17,23 @@
             min-height: 100vh;
         }
 
-        h1 {
+        h1 
+        {
             margin-top: 20px;
             font-size: 1.4rem;
             text-align: center;
+            margin-bottom: 5px;
         }
 
-        .container {
+        p
+        {
+            margin-top: 8px;
+            margin-bottom: 3px;
+            text-align: center;
+
+        }
+        .container 
+        {
             margin-top: 16px;
             background: #1f2937;
             padding: 16px;
@@ -32,41 +43,50 @@
             width: 95%;
         }
 
-        .controls {
+        .controls 
+        {
             display: flex;
             flex-wrap: wrap;
             gap: 12px;
             align-items: center;
             margin-bottom: 12px;
+            
         }
 
-        .control-group {
+        .control-group 
+        {
             display: flex;
             flex-direction: column;
             font-size: 0.8rem;
+            
         }
 
-        .control-group input[type="number"] {
+        .control-group input[type="number"] 
+        {
             padding: 4px 6px;
             border-radius: 6px;
             border: 1px solid #4b5563;
             background: #111827;
             color: #e5e7eb;
             width: 90px;
+             box-shadow: 0 0 5px 2px #a2c6ffaa;
         }
 
-        .control-group label {
+        .control-group label 
+        {
             margin-bottom: 2px;
         }
 
-        .buttons {
+        .buttons 
+        {
             display: flex;
             gap: 8px;
             margin-top: 4px;
             align-items: center;
         }
 
-        button {
+        button 
+        {
             border: none;
             border-radius: 999px;
             padding: 6px 14px;
@@ -77,39 +97,48 @@
             color: white;
         }
 
-        button.secondary {
+        button.secondary 
+        {
             background: #374151;
         }
 
-        button.danger {
+        button.danger 
+        {
             background: #b91c1c;
         }
 
-        button:disabled {
+        button:disabled 
+        {
             opacity: 0.4;
             cursor: default;
         }
 
-        canvas {
+        canvas 
+        {
             background: #020617;
             border-radius: 10px;
             border: 1px solid #4b5563;
             display: block;
             margin-top: 10px;
+            box-shadow: 0 0 5px 4px #a2c6ffaa;
         }
 
-        .info {
+        .info 
+        {
             margin-top: 8px;
             font-size: 0.8rem;
             color: #d1d5db;
+            text-align: center;
         }
 
-        .info span {
+        .info span
+        {
             display: inline-block;
             margin-right: 12px;
         }
 
-        @media (max-width: 600px) {
+        @media (max-width: 600px) 
+        {
             .control-group input[type="number"] {
                 width: 70px;
             }
@@ -117,7 +146,8 @@
     </style>
 </head>
 <body>
-    <h1>Simulator Gerak Parabola 🏀 (+ Hambatan Udara)</h1>
+    <h1>Simulator Gerak Parabola</h1>
+    <p>By Raffael</p>
 
     <div class="container">
         <div class="controls">
@@ -175,7 +205,7 @@
             </div>
         </div>
 
-        <canvas id="simCanvas" width="800" height="400"></canvas>
+        <canvas id="simCanvas" width="980" height="400"></canvas>
 
         <div class="info" id="infoText">
             Masukkan parameter, lalu klik <b>Start</b> buat lihat lintasan proyektil.
@@ -210,7 +240,8 @@
         let pathPoints = [];
         let maxHeight = 0;  // 🔥 tinggi maksimum dari simulasi
 
-        function resetSim() {
+        function resetSim() 
+        {
             cancelAnimationFrame(animationId);
             animationId = null;
             running = false;
@@ -231,7 +262,8 @@
             infoText.innerHTML = 'Masukkan parameter, lalu klik <b>Start</b> buat lihat lintasan proyektil.';
         }
 
-        function initPhysics() {
+        function initPhysics() 
+        {
             const v0 = Number(speedInput.value) || 0;
             const angleDeg = Number(angleInput.value) || 0;
             const h0 = Number(heightInput.value) || 0;
@@ -249,7 +281,8 @@
 
             const airOn = airCheckbox.checked;
 
-            if (!airOn) {
+            if (!airOn) 
+            {
                 // 🔢 Perhitungan teori (tanpa drag)
                 const a = -0.5 * g;
                 const b = vy;
@@ -268,22 +301,26 @@
                     `<span>Perkiraan (tanpa drag) — waktu di udara: <b>${flightTime.toFixed(2)} s</b></span>` +
                     `<span>Jarak jangkauan: <b>${range.toFixed(2)} m</b></span>` +
                     `<span>Tinggi maksimum: <b>${hMax.toFixed(2)} m</b></span>`;
-            } else {
+            } 
+            else 
+            {
                 // 🌬️ Drag aktif: teori nggak dipakai
                 infoText.innerHTML =
                     `<span>Hambatan udara aktif.</span> <span>Hasil numerik akan muncul setelah proyektil jatuh.</span>`;
             }
         }
 
-        function worldToScreen(xWorld, yWorld) {
+        function worldToScreen(xWorld, yWorld) 
+        {
             const xScreen = 40 + xWorld * scale;
             const yScreen = canvas.height - 30 - yWorld * scale;
             return { x: xScreen, y: yScreen };
         }
 
-        function drawGround() {
+        function drawGround() 
+        {
             ctx.strokeStyle = '#4b5563';
-            ctx.lineWidth = 2;
+            ctx.lineWidth = 5;
             ctx.beginPath();
             const yGround = canvas.height - 30;
             ctx.moveTo(0, yGround);
@@ -294,7 +331,8 @@
             ctx.fillRect(0, yGround, canvas.width, canvas.height - yGround);
         }
 
-        function drawAxes() {
+        function drawAxes() 
+        {
             ctx.strokeStyle = '#374151';
             ctx.lineWidth = 1;
             ctx.beginPath();
@@ -305,12 +343,14 @@
             ctx.stroke();
         }
 
-        function drawPath() {
+        function drawPath() 
+        {
             if (pathPoints.length < 2) return;
             ctx.strokeStyle = '#22c55e';
             ctx.lineWidth = 2;
             ctx.beginPath();
-            for (let i = 0; i < pathPoints.length; i++) {
+            for (let i = 0; i < pathPoints.length; i++) 
+            {
                 const p = worldToScreen(pathPoints[i].x, pathPoints[i].y);
                 if (i === 0) ctx.moveTo(p.x, p.y);
                 else ctx.lineTo(p.x, p.y);
@@ -318,7 +358,8 @@
             ctx.stroke();
         }
 
-        function drawProjectile() {
+        function drawProjectile() 
+        {
             const p = worldToScreen(x, y);
             ctx.fillStyle = '#f97316';
             ctx.beginPath();
@@ -326,7 +367,8 @@
             ctx.fill();
         }
 
-        function drawScene() {
+        function drawScene() 
+        {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             drawGround();
             drawAxes();
@@ -335,7 +377,8 @@
         }
 
         // ✨ update fisika (dengan opsi drag)
-        function updatePhysics() {
+        function updatePhysics() 
+        {
             t += dt;
 
             const mass = Number(massInput.value) || 1;   // kg
@@ -345,7 +388,8 @@
             let ax = 0;
             let ay = -g;  // gravitasi ke bawah
 
-            if (airOn) {
+            if (airOn) 
+            {
                 const speed = Math.sqrt(vx * vx + vy * vy);
                 if (speed > 0 && mass > 0 && dragCoeff > 0) {
                     const dragForce = dragCoeff * speed * speed;
@@ -363,26 +407,30 @@
             x = x + vx * dt;
             y = y + vy * dt;
 
-            if (y < 0) {
+            if (y < 0) 
+            {
                 y = 0;
             }
 
             // 🔥 catat tinggi maksimum saat simulasi
-            if (y > maxHeight) {
+            if (y > maxHeight) 
+            {
                 maxHeight = y;
             }
 
             pathPoints.push({ x, y });
         }
 
-        function loop() {
+        function loop() 
+        {
             if (!running || paused) return;
 
             updatePhysics();
             drawScene();
 
             // kondisi menyentuh tanah
-            if (y <= 0 && vy <= 0 && t > 0.05) {
+            if (y <= 0 && vy <= 0 && t > 0.05) 
+            {
                 running = false;
                 startBtn.disabled = false;
                 pauseBtn.disabled = true;
@@ -399,8 +447,10 @@
             animationId = requestAnimationFrame(loop);
         }
 
-        startBtn.addEventListener('click', () => {
-            if (!running) {
+        startBtn.addEventListener('click', () => 
+        {
+            if (!running) 
+            {
                 initPhysics();
                 running = true;
                 paused = false;
@@ -408,25 +458,32 @@
                 pauseBtn.disabled = false;
                 pauseBtn.textContent = 'Pause ⏸';
                 loop();
-            } else if (running && paused) {
+            } 
+            else if (running && paused) 
+            {
                 paused = false;
                 pauseBtn.textContent = 'Pause ⏸';
                 loop();
             }
         });
 
-        pauseBtn.addEventListener('click', () => {
+        pauseBtn.addEventListener('click', () => 
+        {
             if (!running) return;
             paused = !paused;
-            if (paused) {
+            if (paused) 
+            {
                 pauseBtn.textContent = 'Resume ▶';
-            } else {
+            } 
+            else 
+            {
                 pauseBtn.textContent = 'Pause ⏸';
                 loop();
             }
         });
 
-        resetBtn.addEventListener('click', () => {
+        resetBtn.addEventListener('click', () => 
+        {
             resetSim();
         });
 
