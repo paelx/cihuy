@@ -198,9 +198,9 @@
             <div class="control-group">
                 <label>&nbsp;</label>
                 <div class="buttons">
-                    <button id="startBtn">Start ▶</button>
-                    <button id="pauseBtn" class="secondary" disabled>Pause ⏸</button>
-                    <button id="resetBtn" class="danger">Reset ⟲</button>
+                    <button id="startBtn">Start</button>
+                    <button id="pauseBtn" class="secondary" disabled>Pause</button>
+                    <button id="resetBtn" class="danger">Reset</button> 
                 </div>
             </div>
         </div>
@@ -257,7 +257,7 @@
 
             startBtn.disabled = false;
             pauseBtn.disabled = true;
-            pauseBtn.textContent = 'Pause ⏸';
+            pauseBtn.textContent = 'Pause'; 
 
             infoText.innerHTML = 'Masukkan parameter, lalu klik <b>Start</b> buat lihat lintasan proyektil.';
         }
@@ -456,13 +456,13 @@
                 paused = false;
                 startBtn.disabled = true;
                 pauseBtn.disabled = false;
-                pauseBtn.textContent = 'Pause ⏸';
+                pauseBtn.textContent = 'Pause';
                 loop();
             } 
             else if (running && paused) 
             {
                 paused = false;
-                pauseBtn.textContent = 'Pause ⏸';
+                pauseBtn.textContent = 'Pause';
                 loop();
             }
         });
@@ -477,7 +477,7 @@
             } 
             else 
             {
-                pauseBtn.textContent = 'Pause ⏸';
+                pauseBtn.textContent = 'Pause';  
                 loop();
             }
         });
