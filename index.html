@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Simulator Gerak Parabola + Hambatan Udara</title>
+    <title>Simulator Gerak Parabola</title>
     <style>
         body 
         {
@@ -30,8 +30,8 @@
             margin-top: 8px;
             margin-bottom: 3px;
             text-align: center;
-
         }
+
         .container 
         {
             margin-top: 16px;
@@ -50,7 +50,6 @@
             gap: 12px;
             align-items: center;
             margin-bottom: 12px;
-            
         }
 
         .control-group 
@@ -58,7 +57,6 @@
             display: flex;
             flex-direction: column;
             font-size: 0.8rem;
-            
         }
 
         .control-group input[type="number"] 
@@ -69,7 +67,7 @@
             background: #111827;
             color: #e5e7eb;
             width: 90px;
-             box-shadow: 0 0 5px 2px #a2c6ffaa;
+            box-shadow: 0 0 5px 2px #a2c6ffaa;
         }
 
         .control-group label 
@@ -163,44 +161,23 @@
                 <label>Gravitasi (m/s²)</label>
                 <input type="number" id="gravityInput" value="10" step="0.1" min="0.1" max="30">
             </div>
-            <div class="control-group">
-                <label>Tinggi awal (m)</label>
-                <input type="number" id="heightInput" value="0" step="0.1" min="0">
-            </div>
+
             <div class="control-group" style="display:none;">
                 <label>Skala jarak (px/m)</label>
                 <input type="number" id="scaleInput" value="7" step="1" min="1" max="30">
             </div>
 
-            <!-- Massa -->
             <div class="control-group">
                 <label>Massa (kg)</label>
                 <input type="number" id="massInput" value="1" step="0.1" min="0.1">
             </div>
 
-            <!-- Koefisien drag -->
-            <div class="control-group">
-                <label>Koefisien drag (k)</label>
-                <input type="number" id="dragInput" value="0.15" step="0.01" min="0">
-            </div>
-
-            <!-- Checkbox hambatan udara -->
-            <div class="control-group">
-                <label>Hambatan udara</label>
-                <div class="buttons">
-                    <label style="font-size:0.8rem; display:flex; align-items:center; gap:4px;">
-                        <input type="checkbox" id="airCheckbox">
-                        Aktifkan
-                    </label>
-                </div>
-            </div>
-
             <div class="control-group">
                 <label>&nbsp;</label>
                 <div class="buttons">
-                    <button id="startBtn">Start</button>
-                    <button id="pauseBtn" class="secondary" disabled>Pause</button>
-                    <button id="resetBtn" class="danger">Reset</button> 
+                    <button id="startBtn">Start ▶</button>
+                    <button id="pauseBtn" class="secondary" disabled>Pause ⏸</button>
+                    <button id="resetBtn" class="danger">Reset ⟲</button>
                 </div>
             </div>
         </div>
@@ -216,19 +193,16 @@
         const canvas = document.getElementById('simCanvas');
         const ctx = canvas.getContext('2d');
 
-        const speedInput = document.getElementById('speedInput');
-        const angleInput = document.getElementById('angleInput');
-        const gravityInput = document.getElementById('gravityInput');
-        const heightInput = document.getElementById('heightInput');
+        const inputkec = document.getElementById('speedInput');
+        const inputdrjt = document.getElementById('angleInput');
+        const inputgrav = document.getElementById('gravityInput');
         const scaleInput = document.getElementById('scaleInput');
-        const massInput = document.getElementById('massInput');
-        const dragInput = document.getElementById('dragInput');
-        const airCheckbox = document.getElementById('airCheckbox');
+        const inputmassa = document.getElementById('massInput');
 
-        const startBtn = document.getElementById('startBtn');
-        const pauseBtn = document.getElementById('pauseBtn');
-        const resetBtn = document.getElementById('resetBtn');
-        const infoText = document.getElementById('infoText');
+        const start = document.getElementById('startBtn');
+        const pause = document.getElementById('pauseBtn');
+        const reset = document.getElementById('resetBtn');
+        const infotext = document.getElementById('infoText');
 
         let animationId = null;
         let running = false;
@@ -236,9 +210,11 @@
 
         // variabel fisika
         let x, y, vx, vy, g, scale, t;
-        const dt = 0.02; // langkah waktu (s)
+        const dt = 0.02;
         let pathPoints = [];
-        let maxHeight = 0;  // 🔥 tinggi maksimum dari simulasi
+        let tinggimax = 0;
+
+        const h0 = 0;
 
         function resetSim() 
         {
@@ -248,66 +224,48 @@
             paused = false;
 
             x = 0;
-            y = Number(heightInput.value) || 0;
+            y = h0;
             t = 0;
             pathPoints = [];
-            maxHeight = y;   // reset tinggi maksimum ke tinggi awal
+            tinggimax = y;
 
             drawScene();
 
-            startBtn.disabled = false;
-            pauseBtn.disabled = true;
-            pauseBtn.textContent = 'Pause'; 
+            start.disabled = false;
+            pause.disabled = true;
+            pause.textContent = 'Pause ⏸';
 
-            infoText.innerHTML = 'Masukkan parameter, lalu klik <b>Start</b> buat lihat lintasan proyektil.';
+            infotext.innerHTML = 'Masukkan parameter, lalu klik <b>Start</b> buat lihat lintasan proyektil.';
         }
 
         function initPhysics() 
         {
-            const v0 = Number(speedInput.value) || 0;
-            const angleDeg = Number(angleInput.value) || 0;
-            const h0 = Number(heightInput.value) || 0;
-            g = Number(gravityInput.value) || 9.8;
+            const v0 = Number(inputkec.value) || 0;
+            const angleDeg = Number(inputdrjt.value) || 0;
+            g = Number(inputgrav.value) || 9.8;
             scale = Number(scaleInput.value) || 7;
 
-            const angleRad = angleDeg * Math.PI / 180;
-            vx = v0 * Math.cos(angleRad);
-            vy = v0 * Math.sin(angleRad);
+            const mass = Number(inputmassa.value) || 1;
+
+            const theta = angleDeg * Math.PI / 180;
+            vx = v0 * Math.cos(theta);
+            vy = v0 * Math.sin(theta);
+
             x = 0;
             y = h0;
             t = 0;
             pathPoints = [];
-            maxHeight = y;
+            tinggimax = y;
 
-            const airOn = airCheckbox.checked;
+            // Rumus tanpa drag, h0=0 (massa tidak mempengaruhi hasil)
+            const T = (2 * vy) / g;
+            const R = (v0 * v0 * Math.sin(2 * theta)) / g;
+            const hMax = (vy * vy) / (2 * g);
 
-            if (!airOn) 
-            {
-                // 🔢 Perhitungan teori (tanpa drag)
-                const a = -0.5 * g;
-                const b = vy;
-                const c = h0;
-                let flightTime = 0;
-                const D = b * b - 4 * a * c;
-                if (D >= 0) {
-                    const t1 = (-b + Math.sqrt(D)) / (2 * a);
-                    const t2 = (-b - Math.sqrt(D)) / (2 * a);
-                    flightTime = Math.max(t1, t2);
-                }
-                const range = vx * flightTime;
-                const hMax = h0 + (vy * vy) / (2 * g);
-
-                infoText.innerHTML =
-                    `<span>Perkiraan (tanpa drag) — waktu di udara: <b>${flightTime.toFixed(2)} s</b></span>` +
-                    `<span>Jarak jangkauan: <b>${range.toFixed(2)} m</b></span>` +
-                    `<span>Tinggi maksimum: <b>${hMax.toFixed(2)} m</b></span>`;
-            } 
-            else 
-            {
-                // 🌬️ Drag aktif: teori nggak dipakai
-                infoText.innerHTML =
-                    `<span>Hambatan udara aktif.</span> <span>Hasil numerik akan muncul setelah proyektil jatuh.</span>`;
-            }
+            infotext.innerHTML =
+                `<span>Waktu di udara: <b>${T.toFixed(2)} s</b></span>` +
+                `<span>Jarak jangkauan (R): <b>${R.toFixed(2)} m</b></span>` +
+                `<span>Tinggi maksimum: <b>${hMax.toFixed(2)} m</b></span>`;
         }
 
         function worldToScreen(xWorld, yWorld) 
@@ -376,30 +334,12 @@
             drawProjectile();
         }
 
-        // ✨ update fisika (dengan opsi drag)
         function updatePhysics() 
         {
             t += dt;
 
-            const mass = Number(massInput.value) || 1;   // kg
-            const dragCoeff = Number(dragInput.value) || 0;
-            const airOn = airCheckbox.checked;
-
-            let ax = 0;
-            let ay = -g;  // gravitasi ke bawah
-
-            if (airOn) 
-            {
-                const speed = Math.sqrt(vx * vx + vy * vy);
-                if (speed > 0 && mass > 0 && dragCoeff > 0) {
-                    const dragForce = dragCoeff * speed * speed;
-                    const dragAx = -(dragForce * vx / speed) / mass;
-                    const dragAy = -(dragForce * vy / speed) / mass;
-
-                    ax += dragAx;
-                    ay += dragAy;
-                }
-            }
+            const ax = 0;
+            const ay = -g;
 
             vx = vx + ax * dt;
             vy = vy + ay * dt;
@@ -407,16 +347,8 @@
             x = x + vx * dt;
             y = y + vy * dt;
 
-            if (y < 0) 
-            {
-                y = 0;
-            }
-
-            // 🔥 catat tinggi maksimum saat simulasi
-            if (y > maxHeight) 
-            {
-                maxHeight = y;
-            }
+            if (y < 0) y = 0;
+            if (y > tinggimax) tinggimax = y;
 
             pathPoints.push({ x, y });
         }
@@ -428,18 +360,16 @@
             updatePhysics();
             drawScene();
 
-            // kondisi menyentuh tanah
             if (y <= 0 && vy <= 0 && t > 0.05) 
             {
                 running = false;
-                startBtn.disabled = false;
-                pauseBtn.disabled = true;
+                start.disabled = false;
+                pause.disabled = true;
 
-                // 🔥 Tambahkan hasil simulasi (baik drag ON maupun OFF)
-                infoText.innerHTML 
+                infotext.innerHTML 
                     ` &nbsp;| &nbsp;<b>Hasil simulasi — waktu di udara: ${t.toFixed(2)} s</b>` +
                     ` &nbsp;| &nbsp;<b>Jarak jangkauan: ${x.toFixed(2)} m</b>` +
-                    ` &nbsp;| &nbsp;<b>Tinggi maksimum: ${maxHeight.toFixed(2)} m</b>`;
+                    ` &nbsp;| &nbsp;<b>Tinggi maksimum: ${tinggimax.toFixed(2)} m</b>`;
 
                 return;
             }
@@ -447,45 +377,38 @@
             animationId = requestAnimationFrame(loop);
         }
 
-        startBtn.addEventListener('click', () => 
+        start.addEventListener('click', () => 
         {
             if (!running) 
             {
                 initPhysics();
                 running = true;
                 paused = false;
-                startBtn.disabled = true;
-                pauseBtn.disabled = false;
-                pauseBtn.textContent = 'Pause';
+                start.disabled = true;
+                pause.disabled = false;
+                pause.textContent = 'Pause ⏸';
                 loop();
             } 
             else if (running && paused) 
             {
                 paused = false;
-                pauseBtn.textContent = 'Pause';
+                pause.textContent = 'Pause ⏸';
                 loop();
             }
         });
 
-        pauseBtn.addEventListener('click', () => 
+        pause.addEventListener('click', () => 
         {
             if (!running) return;
             paused = !paused;
-            if (paused) 
-            {
-                pauseBtn.textContent = 'Resume ▶';
-            } 
-            else 
-            {
-                pauseBtn.textContent = 'Pause';  
+            if (paused) pause.textContent = 'Resume ▶';
+            else {
+                pause.textContent = 'Pause ⏸';
                 loop();
             }
         });
 
-        resetBtn.addEventListener('click', () => 
-        {
-            resetSim();
-        });
+        reset.addEventListener('click', resetSim);
 
         resetSim();
     </script>
