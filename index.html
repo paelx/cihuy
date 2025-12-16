@@ -164,9 +164,10 @@
 
             <div class="control-group" style="display:none;">
                 <label>Skala jarak (px/m)</label>
-                <input type="number" id="scaleInput" value="7" step="1" min="1" max="30">
+                <input type="number" id="scaleInput" value="2" step="1" min="1" max="30">
             </div>
 
+            <!-- Massa tetap ada (meski tanpa drag, massa tidak mempengaruhi lintasan ideal) -->
             <div class="control-group">
                 <label>Massa (kg)</label>
                 <input type="number" id="massInput" value="1" step="0.1" min="0.1">
@@ -209,11 +210,10 @@
         let paused = false;
 
         // variabel fisika
-        let x, y, vx, vy, g, scale, t;
+        let x, y, V0x, V0y, g, scale, t;
         const dt = 0.02;
         let pathPoints = [];
         let tinggimax = 0;
-
         const h0 = 0;
 
         function resetSim() 
@@ -243,13 +243,13 @@
             const v0 = Number(inputkec.value) || 0;
             const angleDeg = Number(inputdrjt.value) || 0;
             g = Number(inputgrav.value) || 9.8;
-            scale = Number(scaleInput.value) || 7;
+            scale = Number(scaleInput.value) || 0;
 
             const mass = Number(inputmassa.value) || 1;
 
             const theta = angleDeg * Math.PI / 180;
-            vx = v0 * Math.cos(theta);
-            vy = v0 * Math.sin(theta);
+            V0x = v0 * Math.cos(theta);
+            V0y = v0 * Math.sin(theta);
 
             x = 0;
             y = h0;
@@ -258,14 +258,18 @@
             tinggimax = y;
 
             // Rumus tanpa drag, h0=0 (massa tidak mempengaruhi hasil)
-            const T = (2 * vy) / g;
+            const T = (2 * V0y) / g;
             const R = (v0 * v0 * Math.sin(2 * theta)) / g;
-            const hMax = (vy * vy) / (2 * g);
+            const hMax = (V0y * V0y) / (2 * g);
 
-            infotext.innerHTML =
+           infotext.innerHTML =
                 `<span>Waktu di udara: <b>${T.toFixed(2)} s</b></span>` +
                 `<span>Jarak jangkauan (R): <b>${R.toFixed(2)} m</b></span>` +
-                `<span>Tinggi maksimum: <b>${hMax.toFixed(2)} m</b></span>`;
+                `<span>Tinggi maksimum: <b>${hMax.toFixed(2)} m</b></span>` +
+                `<span>V0x : <b>${V0x.toFixed(2)} m/s</b></span>` +
+                `<span>V0y : <b>${V0y.toFixed(2)} m/s</b></span>`;
+
+                
         }
 
         function worldToScreen(xWorld, yWorld) 
@@ -301,7 +305,7 @@
             ctx.stroke();
         }
 
-        function drawPath() 
+        function drawPath()
         {
             if (pathPoints.length < 2) return;
             ctx.strokeStyle = '#22c55e';
@@ -334,18 +338,18 @@
             drawProjectile();
         }
 
-        function updatePhysics() 
+        function updatePhysics()
         {
             t += dt;
 
             const ax = 0;
             const ay = -g;
 
-            vx = vx + ax * dt;
-            vy = vy + ay * dt;
+            V0x = V0x + ax * dt;
+            V0y = V0y + ay * dt;
 
-            x = x + vx * dt;
-            y = y + vy * dt;
+            x = x + V0x * dt;
+            y = y + V0y * dt;
 
             if (y < 0) y = 0;
             if (y > tinggimax) tinggimax = y;
@@ -360,21 +364,16 @@
             updatePhysics();
             drawScene();
 
-            if (y <= 0 && vy <= 0 && t > 0.05) 
+            if (y <= 0 && V0y <= 0 && t > 0.05) 
             {
                 running = false;
                 start.disabled = false;
                 pause.disabled = true;
 
-                infotext.innerHTML 
-                    ` &nbsp;| &nbsp;<b>Hasil simulasi — waktu di udara: ${t.toFixed(2)} s</b>` +
-                    ` &nbsp;| &nbsp;<b>Jarak jangkauan: ${x.toFixed(2)} m</b>` +
-                    ` &nbsp;| &nbsp;<b>Tinggi maksimum: ${tinggimax.toFixed(2)} m</b>`;
-
                 return;
             }
 
-            animationId = requestAnimationFrame(loop);
+            animationId = requestAnimationFrame(loop)
         }
 
         start.addEventListener('click', () => 
